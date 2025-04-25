@@ -11,33 +11,14 @@ from sklearn.metrics import mean_squared_error
 
 
 def load_data(path: str) -> pd.DataFrame:
-    """Загружает данные из CSV-файла и возвращает DataFrame."""
     return pd.read_csv(path)
 
-
 def preprocess(df: pd.DataFrame, corr_threshold: float = 0.9, rare_tol: float = 0.01):
-    """
-    Предобработка данных:
-      - one-hot кодирование категориальных признаков,
-      - удаление редких dummy-признаков (доля < rare_tol),
-      - заполнение пропусков медианой,
-      - масштабирование признаков,
-      - удаление сильно коррелированных признаков (порог corr_threshold),
-      - повторное масштабирование.
-    Возвращает:
-      X_final: готовые признаки,
-      y: целевое значение SalePrice,
-      rare: список удалённых редких dummy-признаков,
-      drop_cols: список удалённых коррелированных признаков.
-    """
-    # Целевая переменная
     y = df['SalePrice'].values
     X = df.drop(columns=['SalePrice'])
 
-    # One-hot кодирование категориальных признаков
     X = pd.get_dummies(X, drop_first=True)
 
-    # Удаление dummy-признаков с низкой частотой = < rare_tol
     freq = (X == 1).mean()
     rare = freq[freq < rare_tol].index.tolist()
     X.drop(columns=rare, inplace=True)
@@ -50,7 +31,7 @@ def preprocess(df: pd.DataFrame, corr_threshold: float = 0.9, rare_tol: float = 
     scaler = StandardScaler()
     X_scaled = pd.DataFrame(scaler.fit_transform(X_imp), columns=X.columns)
 
-    # Удаление высококоррелированных признаков
+    # Удаление коррелированных признаков
     corr = X_scaled.corr().abs()
     upper = corr.where(np.triu(np.ones(corr.shape), k=1).astype(bool))
     drop_cols = [col for col in upper.columns if any(upper[col] > corr_threshold)]
